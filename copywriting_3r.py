@@ -125,7 +125,7 @@ def generate_text_with_exception_handling(prompt):
 
         generation_config = {
             "temperature": 1,
-            "top_p": 0.95,
+            "top_p": 0.6,
             "top_k": 0,
             "max_output_tokens": 8192,
         }
