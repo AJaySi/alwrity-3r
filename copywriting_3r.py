@@ -10,7 +10,6 @@ def main():
     set_page_config()
     custom_css()
     hide_elements()
-    sidebar()
     title_and_description()
     input_section()
 
@@ -57,36 +56,9 @@ def hide_elements():
     hide_streamlit_footer = '<style>#MainMenu {visibility: hidden;} footer {visibility: hidden;}</style>'
     st.markdown(hide_streamlit_footer, unsafe_allow_html=True)
 
-def sidebar():
-    st.sidebar.title("The 3 R’s Copywriting Formula")
-    st.sidebar.image("img/alwrity.jpeg", use_column_width=True)
-    st.sidebar.markdown("🧕 :red[Checkout Alwrity], complete **AI writer & Blogging solution**:[Alwrity](https://alwrity.netlify.app)")
-
 
 def title_and_description():
     st.title("✍️ Alwrity - AI Generator for The 3 R’s Copywriting Formula")
-    with st.expander("What is **The 3 R’s Copywriting Formula** & **How to Use**? 📝❗"):
-        st.markdown('''
-            ### What's The 3 R’s Copywriting Formula, and How to use this AI generator 🗣️
-            ---
-            #### The 3 R’s Copywriting Formula
-
-            The 3 R’s stands for Rapport-Reasons-Results. It's a copywriting framework that focuses on guiding the audience through different stages:
-
-            1. **Rapport**: Establishing a connection or bond with the audience.
-            2. **Reasons**: Providing logical reasons or justifications for taking action.
-            3. **Results**: Highlighting the potential outcomes or benefits of taking action.
-
-            The 3 R’s formula helps in building trust, credibility, and persuasion in copywriting.
-
-            #### The 3 R’s Copywriting Formula: Simple Example
-
-            - **Rapport**: "Hey there, fellow fitness enthusiast!"
-            - **Reasons**: "Here are three science-backed reasons why our protein powder is the best choice for you."
-            - **Results**: "Experience increased muscle mass, faster recovery, and improved performance in just weeks!"
-
-            ---
-        ''')
 
 
 def input_section():
@@ -133,58 +105,67 @@ def generate_three_rs_copy(rapport, reasons, results):
         - Reasons: {reasons}
         - Results: {results}
     """
-    return openai_chatgpt(prompt)
-
-
-def page_bottom():
-    """Display the bottom section of the web app."""
-    data_oracle = import_json(r"lottie_files/brain_robot.json")
-    st_lottie(data_oracle, width=600, key="oracle")
-
-    st.markdown('''
-    Copywrite using The 3 R’s Copywriting Formula - powered by AI (OpenAI, Gemini Pro).
-
-    Implemented by [Alwrity](https://alwrity.netlify.app).
-
-    Learn more about [Google's Stance on AI generated content](https://alwrity.netlify.app/post/googles-guidelines-on-using-ai-generated-content-everything-you-need-to-know).
-    ''')
-
-    st.markdown("""
-    ### Example Copy:
-    - Rapport: *'Hey there, fellow fitness enthusiast!'*
-    - Reasons: *'Here are three science-backed reasons why our protein powder is the best choice for you.'*
-    - Results: *'Experience increased muscle mass, faster recovery, and improved performance in just weeks!'*
-    """)
+    try:
+        response = generate_text_with_exception_handling(prompt)
+        return response
+    except Exception as err:
+        st.error(f"Exit: Failed to get response from LLM: {err}")
+        exit(1)
 
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
-def openai_chatgpt(prompt, model="gpt-3.5-turbo-0125", max_tokens=500, top_p=0.9, n=1):
+def generate_text_with_exception_handling(prompt):
+    """
+    Generates text using the Gemini model with exception handling.
+
+    Args:
+        api_key (str): Your Google Generative AI API key.
+        prompt (str): The prompt for text generation.
+
+    Returns:
+        str: The generated text.
+    """
+
     try:
-        client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
-        response = client.chat.completions.create(
-            model=model,
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=max_tokens,
-            n=n,
-            top_p=top_p
-        )
-        return response.choices[0].message.content
-    except openai.APIError as e:
-        st.error(f"OpenAI API Error: {e}")
-    except openai.APIConnectionError as e:
-        st.error(f"Failed to connect to OpenAI API: {e}")
-    except openai.RateLimitError as e:
-        st.error(f"Rate limit exceeded on OpenAI API request: {e}")
-    except Exception as err:
-        st.error(f"An error occurred: {err}")
+        genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
 
+        generation_config = {
+            "temperature": 1,
+            "top_p": 0.95,
+            "top_k": 0,
+            "max_output_tokens": 8192,
+        }
 
-# Function to import JSON data
-def import_json(path):
-    with open(path, "r", encoding="utf8", errors="ignore") as file:
-        url = json.load(file)
-        return url
+        safety_settings = [
+            {
+                "category": "HARM_CATEGORY_HARASSMENT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+                "category": "HARM_CATEGORY_HATE_SPEECH",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+            },
+            {
+                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+            },
+        ]
 
+        model = genai.GenerativeModel(model_name="gemini-1.5-pro-latest",
+                                      generation_config=generation_config,
+                                      safety_settings=safety_settings)
+
+        convo = model.start_chat(history=[])
+        convo.send_message(prompt)
+        return convo.last.text
+
+    except Exception as e:
+        st.exception(f"An unexpected error occurred: {e}")
+        return None
 
 
 if __name__ == "__main__":
