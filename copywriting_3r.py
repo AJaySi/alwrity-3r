@@ -94,8 +94,6 @@ def input_section():
 	            else:
 	                st.error("All fields are required!")
 	
-    page_bottom()
-
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
 def generate_three_rs_copy(rapport, reasons, results):
