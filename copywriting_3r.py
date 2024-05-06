@@ -1,10 +1,7 @@
-import time
-import os
-import json
-import openai
+import google.generativeai as genai
 import streamlit as st
-from streamlit_lottie import st_lottie
 from tenacity import retry, stop_after_attempt, wait_random_exponential
+
 
 def main():
     set_page_config()
@@ -15,9 +12,8 @@ def main():
 
 def set_page_config():
     st.set_page_config(
-        page_title="Alwrity",
+        page_title="Alwrity Copywriting",
         layout="wide",
-        page_icon="img/logo.png"
     )
 
 def custom_css():
@@ -58,7 +54,7 @@ def hide_elements():
 
 
 def title_and_description():
-    st.title("✍️ Alwrity - AI Generator for The 3 R’s Copywriting Formula")
+    st.title("🧕 Alwrity - AI Generator for The 3 R’s Copywriting Formula")
 
 
 def input_section():
@@ -82,17 +78,17 @@ def input_section():
                         help="Describe the benefits the audience will get.",
                         placeholder="Achieve goals, improve quality of life...")
 
-            if st.button('**Get The 3 R’s Copy**'):
-	            if rapport.strip() and reasons.strip() and results.strip():
-	                with st.spinner("Generating The 3 R’s Copy..."):
-	                    three_rs_copy = generate_three_rs_copy(rapport, reasons, results)
-	                    if three_rs_copy:
-	                        st.subheader('**👩🔬👩🔬 Your The 3 R’s Copy**')
-	                        st.markdown(three_rs_copy)
-	                    else:
-	                        st.error("💥 **Failed to generate The 3 R’s copy. Please try again!**")
-	            else:
-	                st.error("All fields are required!")
+        if st.button('**Get The 3 R’s Copy**'):
+	        if rapport.strip() and reasons.strip() and results.strip():
+	            with st.spinner("Generating The 3 R’s Copy..."):
+	                three_rs_copy = generate_three_rs_copy(rapport, reasons, results)
+	                if three_rs_copy:
+	                    st.subheader('**👩🔬👩🔬 Your The 3 R’s Copy**')
+	                    st.markdown(three_rs_copy)
+	                else:
+	                    st.error("💥 **Failed to generate The 3 R’s copy. Please try again!**")
+	        else:
+	            st.error("All fields are required!")
 	
 
 @retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
